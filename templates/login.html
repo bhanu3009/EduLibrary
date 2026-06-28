@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="glass card" style="max-width: 500px; margin: 4rem auto; text-align: center;">
+    <h2>Welcome to EduLibrary Pro</h2>
+    <p>Your Smart College Library — Books, Profiles, Fines & More</p>
+    
+    {% if msg %}
+        <div class="badge badge-active" style="display: block; margin-bottom: 1rem; padding: 1rem;">{{ msg }}</div>
+    {% endif %}
+    {% if error %}
+        <div class="badge badge-overdue" style="display: block; margin-bottom: 1rem; padding: 1rem;">{{ error }}</div>
+    {% endif %}
+
+    <div style="display: flex; justify-content: center; gap: 1rem; margin-bottom: 2rem;">
+        <span class="badge badge-active">Student</span>
+        <span class="badge" style="background: var(--secondary-color); color: white;">Teacher</span>
+        <span class="badge" style="background: var(--primary-color); color: white;">Admin</span>
+    </div>
+
+    <form action="/login" method="POST">
+        <div style="text-align: left;">
+            <label for="login_identifier" style="font-weight: bold;">Email or Library ID</label>
+            <input type="text" id="login_identifier" name="login_identifier" placeholder="e.g. admin@gmail.com OR LIB-2024-001" required>
+        </div>
+        <div style="text-align: left;">
+            <label for="password" style="font-weight: bold;">Password</label>
+            <input type="password" id="password" name="password" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn" style="width: 100%; margin-top: 1rem;">LOGIN &rarr;</button>
+    </form>
+    
+    <p style="margin-top: 1.5rem;"><a href="/register" style="color: var(--secondary-color); font-weight: bold;">New user? Register here</a></p>
+</div>
+{% endblock %}

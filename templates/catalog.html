@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="glass card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2>Book Catalog</h2>
+        <form action="/catalog" method="GET" style="display: flex; gap: 1rem; flex: 0.5;">
+            <input type="text" name="search" placeholder="Search by title, author, category..." value="{{ search or '' }}" style="margin: 0; flex: 1;">
+            <button type="submit" class="btn" style="white-space: nowrap;">Search</button>
+        </form>
+    </div>
+
+    <div class="catalog-grid">
+        {% for book in books %}
+        <div class="glass card book-card" style="margin-bottom: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <span class="badge" style="background: var(--primary-color); color: white;">{{ book.category }}</span>
+                {% if book.available_copies > 0 %}
+                    <span class="badge badge-active">Available ({{ book.available_copies }})</span>
+                {% else %}
+                    <span class="badge badge-overdue">Issued</span>
+                {% endif %}
+            </div>
+            <div class="title">{{ book.title }}</div>
+            <div class="author">{{ book.author }}</div>
+            
+            <div class="actions">
+                {% if book.available_copies > 0 %}
+                <form action="/issue/{{ book.id }}" method="POST" style="margin: 0;">
+                    <button type="submit" class="btn btn-success" style="width: 100%;">Borrow Now</button>
+                </form>
+                {% else %}
+                <button class="btn btn-danger" style="width: 100%; opacity: 0.7; cursor: not-allowed;" disabled>Out of Stock</button>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <p>No books found.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-grid">
+    <!-- Sidebar / Profile -->
+    <div class="glass card" style="align-self: start; text-align: center;">
+        <div style="width: 80px; height: 80px; background: var(--secondary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; margin: 0 auto 1rem auto;">
+            {{ user.name[0] }}
+        </div>
+        <h2>{{ user.name }}</h2>
+        <p style="color: #666; margin-bottom: 0.5rem;">ID: {{ user.library_id }} | {{ user.grade_class }} | {{ user.profession }}</p>
+        <p style="color: #666;">{{ user.email }} | {{ user.phone }}</p>
+        <span class="badge badge-active" style="display: inline-block; margin-top: 1rem;">ACTIVE</span>
+    </div>
+
+    <!-- Main Content -->
+    <div>
+        <div class="stats-grid">
+            <div class="stat-card glass">
+                <h2>{{ user.loans|length }}</h2>
+                <p>Total Loans</p>
+            </div>
+            <div class="stat-card glass">
+                {% set active_loans = [] %}
+                {% for loan in user.loans if loan.status != "Returned" %}
+                    {% set _ = active_loans.append(1) %}
+                {% endfor %}
+                <h2>{{ active_loans|length }}</h2>
+                <p>Active</p>
+            </div>
+           <div class="stat-card glass" style="background: linear-gradient(135deg, var(--danger-color), #f78da7);">
+                <h2>₹{{ live_fine_total }}</h2>
+                <p>Fines</p>
+            </div>
+        </div>
+
+        <div class="glass card">
+            <h3>Current Book Loans</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Book Name</th>
+                        <th>Author</th>
+                        <th>Issue Date</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loan in user.loans %}
+                    <tr>
+                        <td>{{ loan.book.title }}</td>
+                        <td>{{ loan.book.author }}</td>
+                        <td>{{ loan.issue_date }}</td>
+                        <td>{{ loan.due_date }}</td>
+                        <td>
+                            {% if loan.status == 'Active' %}
+                                <span class="badge badge-active">Active</span>
+                            {% elif loan.status == 'Overdue' %}
+                                <span class="badge badge-overdue">Overdue</span>
+                            {% else %}
+                                <span class="badge badge-returned">Returned</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if loan.status != 'Returned' %}
+                            <form action="/return/{{ loan.id }}" method="POST" style="margin: 0;">
+                                <button type="submit" class="btn" style="padding: 0.5rem 1rem; font-size: 0.8rem;">Return</button>
+                            </form>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align: center;">No loans found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="glass card">
+            <h3>Outstanding Fines</h3>
+            {% if live_fine_total > 0 %}
+                
+                <div style="background: rgba(214, 65, 97, 0.1); border-left: 4px solid var(--danger-color); padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+                    <strong>Total Accumulated Fine</strong>: ₹{{ live_fine_total }} (₹5/day for overdue books)
+                </div>
+                
+                {% for fine in user.fines if fine.status == "Unpaid" %}
+                <div style="background: rgba(214, 65, 97, 0.1); border-left: 4px solid var(--danger-color); padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+                    <strong>{{ fine.reason }}</strong> — Fine: ₹{{ fine.amount }} 
+                </div>
+                {% endfor %}
+                
+            {% else %}
+                <p>No outstanding fines. Great job!</p>
+            {% endif %}
+        </div>
+        
+        <div class="glass card">
+            <h3>Activity Log</h3>
+            <table>
+                <tbody>
+                    {% for activity in user.activities|sort(attribute='timestamp', reverse=True) %}
+                    <tr>
+                        <td style="width: 150px; color: #666;">{{ activity.timestamp.strftime('%d %b %Y, %H:%M') }}</td>
+                        <td><strong>{{ activity.action }}</strong></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td>No activity found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

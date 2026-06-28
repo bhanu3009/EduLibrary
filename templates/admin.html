@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-grid">
+    <div class="glass card" style="align-self: start;">
+        <h2 style="text-align: center;">Admin Panel</h2>
+        <p style="text-align: center; color: #666;">Welcome, {{ user.name }}</p>
+        
+        <hr style="border: 0; border-top: 1px solid #ddd; margin: 1.5rem 0;">
+        
+        <h3>Add New Book</h3>
+        <form action="/admin/add_book" method="POST">
+            <input type="text" name="title" placeholder="Book Title" required>
+            <input type="text" name="author" placeholder="Author" required>
+            <input type="text" name="category" placeholder="Category (e.g. Science)" required>
+            <input type="number" name="total_copies" placeholder="Number of Copies" required min="1">
+            <button type="submit" class="btn btn-success" style="width: 100%; box-sizing: border-box;">+ Add Book</button>
+        </form>
+        
+        <hr style="border: 0; border-top: 1px solid #ddd; margin: 1.5rem 0;">
+        <a href="/trigger_cron" class="btn" style="width: 100%; text-align: center; box-sizing: border-box;" target="_blank">Run Daily Job (Update Fines)</a>
+    </div>
+
+    <div>
+        <div class="stats-grid">
+            <div class="stat-card glass" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));">
+                <h2>{{ stats.total_members }}</h2>
+                <p>Total Members</p>
+            </div>
+            <div class="stat-card glass" style="background: linear-gradient(135deg, var(--success-color), #2ecc71);">
+                <h2>{{ stats.books_available }}</h2>
+                <p>Books Available</p>
+            </div>
+            <div class="stat-card glass" style="background: linear-gradient(135deg, var(--danger-color), #f78da7);">
+                <h2>₹{{ stats.fines_due }}</h2>
+                <p>Fines Due</p>
+            </div>
+        </div>
+
+        <div class="glass card">
+            <h3>Recent Library Transactions</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Member</th>
+                        <th>Book</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loan in recent_loans %}
+                    <tr>
+                        <td>{{ loan.issue_date }}</td>
+                        <td>{{ loan.user.name }} ({{ loan.user.library_id }})</td>
+                        <td>{{ loan.book.title }}</td>
+                        <td>
+                            {% if loan.status == 'Active' %}
+                                <span class="badge badge-active">Issued</span>
+                            {% elif loan.status == 'Overdue' %}
+                                <span class="badge badge-overdue">Overdue</span>
+                            {% else %}
+                                <span class="badge badge-returned">Returned</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" style="text-align: center;">No recent transactions.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
