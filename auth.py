@@ -6,23 +6,24 @@ from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 import database, models
+import os
+from dotenv import load_dotenv
 
-SECRET_KEY = "mysecretkey_for_edulibrary_pro_change_in_prod"
+load_dotenv()
+
+SECRET_KEY = os.getenv("SECRET_KEY", "fallback_secret_key_for_local_testing_only")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 1 day
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 def _pre_hash(password: str) -> bytes:
-    # Pre-hashing as bytes prevents the 72-byte limit error instantly
     return hashlib.sha256(password.encode('utf-8')).hexdigest().encode('utf-8')
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    # Check the pure bcrypt password
     return bcrypt.checkpw(_pre_hash(plain_password), hashed_password.encode('utf-8'))
 
 def get_password_hash(password: str) -> str:
-    # Hash using pure bcrypt and decode to store as string
     return bcrypt.hashpw(_pre_hash(password), bcrypt.gensalt()).decode('utf-8')
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):

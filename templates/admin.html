@@ -46,6 +46,7 @@
                         <th>Member</th>
                         <th>Book</th>
                         <th>Status</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -63,9 +64,18 @@
                                 <span class="badge badge-returned">Returned</span>
                             {% endif %}
                         </td>
+                        <td>
+                            {% if loan.status != 'Returned' %}
+                            <form action="/admin/return/{{ loan.id }}" method="POST" style="margin: 0;">
+                                <button type="submit" class="btn btn-success" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; border-radius: 4px;">Mark Returned</button>
+                            </form>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="4" style="text-align: center;">No recent transactions.</td></tr>
+                    <tr><td colspan="5" style="text-align: center;">No recent transactions.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

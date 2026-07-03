@@ -13,7 +13,6 @@ models.Base.metadata.create_all(bind=database.engine)
 app = FastAPI(title="EduLibrary Pro")
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
-
 templates = Jinja2Templates(directory="templates")
 
 def get_db():
@@ -36,26 +35,13 @@ async def register_page(request: Request):
 
 @app.post("/register", response_class=HTMLResponse)
 async def register(
-    request: Request,
-    name: str = Form(...),
-    email: str = Form(...),
-    phone: str = Form(...),
-    dob: str = Form(...),
-    grade_class: str = Form(...),
-    roll_no: str = Form(None),
-    profession: str = Form(...),
-    password: str = Form(...),
-    db: Session = Depends(get_db)
+    request: Request, name: str = Form(...), email: str = Form(...), phone: str = Form(...),
+    dob: str = Form(...), grade_class: str = Form(...), roll_no: str = Form(None),
+    profession: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)
 ):
-    # --- NEW CHECK: See if email already exists before trying to save ---
     existing_user = crud.get_user_by_email(db, email)
     if existing_user:
-        return templates.TemplateResponse(
-            request=request, 
-            name="register.html", 
-            context={"user": None, "error": "This email is already registered. Please login or use a different email."}
-        )
-    # --------------------------------------------------------------------
+        return templates.TemplateResponse(request=request, name="register.html", context={"user": None, "error": "This email is already registered. Please login or use a different email."})
     try:
         user_create = schemas.UserCreate(
             name=name, email=email, phone=phone, dob=datetime.strptime(dob, "%Y-%m-%d").date(),
@@ -66,16 +52,8 @@ async def register(
     except Exception as e:
         return templates.TemplateResponse(request=request, name="register.html", context={"user": None, "error": str(e)})
 
-
 @app.post("/login")
-async def login(
-    response: Response, 
-    request: Request, 
-    login_identifier: str = Form(...), 
-    password: str = Form(...), 
-    db: Session = Depends(get_db)
-):
-    # Smart routing: check if user typed an email or an ID
+async def login(response: Response, request: Request, login_identifier: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     if "@" in login_identifier:
         user = crud.get_user_by_email(db, login_identifier)
     else:
@@ -89,7 +67,6 @@ async def login(
     res.set_cookie(key="access_token", value=f"Bearer {access_token}", httponly=True)
     return res
 
-
 @app.get("/logout")
 async def logout(response: Response):
     res = RedirectResponse(url="/", status_code=302)
@@ -101,30 +78,23 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
     user = auth.get_current_user_from_cookie(request, db)
     if not user:
         return RedirectResponse(url="/")
-    
     if user.profession == "Admin":
         return RedirectResponse(url="/admin")
         
-    # Manual live fine calculation
     today = datetime.now().date()
     live_fine_total = 0
-    
-    # Add previously saved unpaid fines
     for fine in user.fines:
         if fine.status == "Unpaid":
             live_fine_total += fine.amount
             
-    # Add active overdue fines dynamically (₹5 per day)
     for loan in user.loans:
         if loan.status != "Returned":
             if today > loan.due_date:
                 days_late = 0
-                # Manual date difference calculation
                 current_date = loan.due_date
                 while current_date < today:
                     days_late += 1
                     current_date += timedelta(days=1)
-                
                 live_fine_total += (days_late * 5)
         
     return templates.TemplateResponse(request=request, name="dashboard.html", context={"user": user, "live_fine_total": live_fine_total})
@@ -170,26 +140,25 @@ async def admin_dashboard(request: Request, db: Session = Depends(get_db)):
         "books_available": sum(b.available_copies for b in books),
         "fines_due": sum(f.amount for f in fines)
     }
-    
-    return templates.TemplateResponse(request=request, name="admin.html", context={
-        "user": user, "stats": stats, "recent_loans": loans
-    })
+    return templates.TemplateResponse(request=request, name="admin.html", context={"user": user, "stats": stats, "recent_loans": loans})
 
 @app.post("/admin/add_book")
-async def admin_add_book(
-    request: Request,
-    title: str = Form(...),
-    author: str = Form(...),
-    category: str = Form(...),
-    total_copies: int = Form(...),
-    db: Session = Depends(get_db)
-):
+async def admin_add_book(request: Request, title: str = Form(...), author: str = Form(...), category: str = Form(...), total_copies: int = Form(...), db: Session = Depends(get_db)):
     user = auth.get_current_user_from_cookie(request, db)
     if not user or user.profession != "Admin":
         return RedirectResponse(url="/dashboard")
         
     book_in = schemas.BookCreate(title=title, author=author, category=category, total_copies=total_copies)
     crud.create_book(db, book_in)
+    return RedirectResponse(url="/admin", status_code=302)
+
+@app.post("/admin/return/{loan_id}")
+async def admin_return_book(request: Request, loan_id: int, db: Session = Depends(get_db)):
+    user = auth.get_current_user_from_cookie(request, db)
+    if not user or user.profession != "Admin":
+        return RedirectResponse(url="/dashboard")
+        
+    crud.return_book(db, loan_id)
     return RedirectResponse(url="/admin", status_code=302)
 
 @app.get("/trigger_cron")
