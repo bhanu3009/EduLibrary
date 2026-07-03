@@ -16,6 +16,7 @@ def get_user_by_email(db: Session, email: str):
 def get_user_by_library_id(db: Session, library_id: str):
     return db.query(models.User).filter(models.User.library_id == library_id).first()
 
+
 def create_user(db: Session, user: schemas.UserCreate):
     hashed_password = auth.get_password_hash(user.password)
     year = datetime.datetime.now().year
@@ -36,6 +37,9 @@ def create_user(db: Session, user: schemas.UserCreate):
     db.refresh(db_user)
     
     log_activity(db, db_user.id, "Registered Account")
+    
+    send_welcome_email(db_user.email, db_user.name, db_user.library_id)
+    
     return db_user
 
 def get_books(db: Session, skip: int = 0, limit: int = 100):
@@ -124,7 +128,7 @@ def pay_fine(db: Session, fine_id: int):
         return True
     return False
 
-def send_overdue_email(user_email: str, user_name: str, book_title: str, days_late: int, fine_amount: int):
+def send_welcome_email(user_email: str, user_name: str, library_id: str):
     sender_email = os.getenv("SENDER_EMAIL")
     sender_password = os.getenv("SENDER_PASSWORD")
 
@@ -135,16 +139,27 @@ def send_overdue_email(user_email: str, user_name: str, book_title: str, days_la
     msg = MIMEMultipart()
     msg['From'] = sender_email
     msg['To'] = user_email
-    msg['Subject'] = "EduLibrary Pro: Overdue Book Notice"
+    msg['Subject'] = "Welcome to EduLibrary Pro - Your Account Details"
+    
     body = f"""Hello {user_name},
 
-This is an automated alert from EduLibrary Pro.
-Your borrowed book '{book_title}' is currently {days_late} days overdue.
-Your current accumulated fine for this book is ₹{fine_amount} (₹5/day).
+Welcome to EduLibrary Pro! Your account has been successfully created.
 
-Please return the book to the library counter as soon as possible.
-Thank you,
+Here are your official library credentials:
+Name: {user_name}
+Library ID: {library_id}
+
+Library Instructions & Rules:
+1. Borrowing Limit: You can borrow up to 5 books at a single time.
+2. Loan Period: The standard borrowing period for all books is 14 days.
+3. Overdue Fines: A late fee of ₹5 per day will be charged for any overdue books.
+4. Physical Care: Please return all physical copies to the library counter in good condition.
+
+You can log in anytime at our portal to browse the catalog, track your active loans, and check any pending fines.
+
+Happy Reading!
 Librarian Administration
+Vignan's Institute of Information Technology
 """
     msg.attach(MIMEText(body, 'plain'))
     try:
@@ -153,9 +168,10 @@ Librarian Administration
         server.login(sender_email, sender_password)
         server.send_message(msg)
         server.quit()
-        print(f"SUCCESS: Overdue email sent to {user_email}")
+        print(f"SUCCESS: Welcome email sent to {user_email}")
     except Exception as e:
-        print(f"FAILED to send email to {user_email}. Error: {e}")
+        print(f"FAILED to send welcome email to {user_email}. Error: {e}")
+
 
 def calculate_active_fines(db: Session):
     active_loans = db.query(models.Loan).filter(models.Loan.status == "Active").all()
