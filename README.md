@@ -149,7 +149,7 @@ Built as a security-focused portfolio piece. Key decisions:
 
 **Bhanu**
 Final-year B.Tech CSE (Cyber Security), Vignan's Institute of Information Technology
-[Add: LinkedIn / GitHub / Portfolio links]
+[https://www.linkedin.com/in/bhanu-prakash-thamiri-967ba0278/]
 
 ---
 
