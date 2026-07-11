@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 
 {% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <div class="dashboard-grid">
     <div class="glass card" style="align-self: start;">
         <h2 style="text-align: center;">Admin Panel</h2>
@@ -35,6 +37,11 @@
                 <h2>₹{{ stats.fines_due }}</h2>
                 <p>Fines Due</p>
             </div>
+        </div>
+
+        <div class="glass card" style="margin-bottom: 2rem;">
+            <h3>Analytics: Most Borrowed Books</h3>
+            <canvas id="popularBooksChart" height="100"></canvas>
         </div>
 
         <div class="glass card">
@@ -82,4 +89,42 @@
         </div>
     </div>
 </div>
+
+<script>
+    fetch('/api/analytics')
+        .then(response => response.json())
+        .then(data => {
+            // Check if there is an error (e.g. Unauthorized)
+            if(data.error) {
+                console.error(data.error);
+                return;
+            }
+
+            const ctx = document.getElementById('popularBooksChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.popular_books_labels,
+                    datasets: [{
+                        label: 'Number of Checkouts',
+                        data: data.popular_books_data,
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 2,
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 } 
+                        }
+                    }
+                }
+            });
+        })
+        .catch(error => console.error('Error loading analytics:', error));
+</script>
 {% endblock %}

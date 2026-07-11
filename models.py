@@ -19,6 +19,7 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     loans = relationship("Loan", back_populates="user")
+    waitlists = relationship("Waitlist", back_populates="user")
     fines = relationship("Fine", back_populates="user")
     activities = relationship("ActivityLog", back_populates="user")
 
@@ -68,5 +69,28 @@ class ActivityLog(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     action = Column(String)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
-
     user = relationship("User", back_populates="activities")
+
+
+class Waitlist(Base):
+    __tablename__ = "waitlists"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    book_id = Column(Integer, ForeignKey("books.id"))
+    request_date = Column(Date, default=datetime.date.today)
+    status = Column(String, default="Waiting") 
+    user = relationship("User", back_populates="waitlists")
+    book = relationship("Book")
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True) # Nullable for failed logins
+    action = Column(String)
+    ip_address = Column(String, default="127.0.0.1")
+    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+
+    user = relationship("User")

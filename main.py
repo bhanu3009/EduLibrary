@@ -116,6 +116,17 @@ async def issue_book_endpoint(request: Request, book_id: int, db: Session = Depe
     crud.issue_book(db, user.id, book_id)
     return RedirectResponse(url="/dashboard", status_code=302)
 
+
+@app.post("/waitlist/{book_id}")
+async def waitlist_book_endpoint(request: Request, book_id: int, db: Session = Depends(get_db)):
+    user = auth.get_current_user_from_cookie(request, db)
+    if not user:
+        return RedirectResponse(url="/")
+    
+    crud.join_waitlist(db, user.id, book_id)
+    return RedirectResponse(url="/catalog", status_code=302)
+
+
 @app.post("/return/{loan_id}")
 async def return_book_endpoint(request: Request, loan_id: int, db: Session = Depends(get_db)):
     user = auth.get_current_user_from_cookie(request, db)
@@ -165,3 +176,31 @@ async def admin_return_book(request: Request, loan_id: int, db: Session = Depend
 async def trigger_cron(db: Session = Depends(get_db)):
     crud.calculate_active_fines(db)
     return {"status": "cron completed"}
+
+
+@app.get("/api/analytics")
+async def api_analytics(request: Request, db: Session = Depends(get_db)):
+    # Security Check: Only Admins can see library analytics
+    user = auth.get_current_user_from_cookie(request, db)
+    if not user or user.profession != "Admin":
+        return {"error": "Unauthorized Access"}
+    
+    analytics_data = crud.get_admin_analytics(db)
+    return analytics_data
+
+
+@app.get("/admin/audit")
+async def security_audit_dashboard(request: Request, db: Session = Depends(get_db)):
+    # Strict Authorization Check
+    user = auth.get_current_user_from_cookie(request, db)
+    if not user or user.profession != "Admin":
+        return RedirectResponse(url="/", status_code=302)
+    
+    # Fetch the logs if authorized
+   # Fetch the logs if authorized
+    logs = crud.get_audit_logs(db)
+    return templates.TemplateResponse(
+        request=request,
+        name="audit.html", 
+        context={"user": user, "logs": logs}
+    )

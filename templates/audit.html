@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-grid" style="grid-template-columns: 1fr;">
+    <div class="glass card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2>🛡️ System Security Audit Logs</h2>
+            <a href="/admin" class="btn btn-secondary">← Back to Admin</a>
+        </div>
+        
+        <p style="color: #666; margin-bottom: 20px;">Immutable record of all system events, authentications, and administrative actions.</p>
+        
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead style="background-color: #2c3e50; color: white;">
+                    <tr>
+                        <th style="padding: 12px; text-align: left;">Timestamp (UTC)</th>
+                        <th style="padding: 12px; text-align: left;">User ID</th>
+                        <th style="padding: 12px; text-align: left;">IP Address</th>
+                        <th style="padding: 12px; text-align: left;">System Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr style="border-bottom: 1px solid #ddd;">
+                        <td style="padding: 12px; font-family: monospace; font-size: 0.9rem;">{{ log.timestamp }}</td>
+                        <td style="padding: 12px;">
+                            {% if log.user %}
+                                {{ log.user.name }} <br><small style="color: #666;">{{ log.user.library_id }}</small>
+                            {% else %}
+                                <span style="color: #e74c3c;">System / Unauthenticated</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px; font-family: monospace;">{{ log.ip_address }}</td>
+                        <td style="padding: 12px; font-weight: bold;">
+                            {% if 'Failed' in log.action or 'Unauthorized' in log.action %}
+                                <span style="color: #e74c3c;">{{ log.action }}</span>
+                            {% else %}
+                                <span style="color: #27ae60;">{{ log.action }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 20px;">No audit logs found. System is clean.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
